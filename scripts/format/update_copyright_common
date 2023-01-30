@@ -1,0 +1,111 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2020 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+#
+# This file contains a number of common functions used in update_copyright.
+#
+
+check_year() {
+    local file=${1}
+
+    local copyright_line=`cat ${file} | egrep 'Copyright \(C\) [0-9]{4}'`
+
+    # Get the first year this file was modified from the actual
+    # file. This may predate the git log if the file was copied
+    # from elsewhere.
+    local first_year=`echo ${copyright_line} | \
+                      perl -p -e "s/.*Copyright \(C\) (\d{4}).*/\1/g;"`
+
+    # The copyright info reported in this file can be of the form:
+    # Copyright (C) XXXX
+    # or:
+    # Copyright (C) XXXX - YYYY
+    # In the second case, get the last year already reported (i.e. YYYY).
+    local last_year_reported=`echo ${copyright_line} | \
+                              perl -p -e "s/.*Copyright \(C\) \d{4}(\s*-\s*(\d{4}))?.*/\2/g;"`
+
+    # Get the last year this file was modified from the git log.
+    # We don't want to see patches that just updated the copyright
+    # year, so output the dates and log messages of the last 3
+    # commits, throw away those mentioning both the words
+    # "update" and "copyright", and take the year of the first
+    # message that remains.
+    #
+    # (It should be enough to look at the last 2 commits since
+    # ideally no two successive commits should have updated the
+    # copyright year: let's err on the safe side and take the last
+    # 5 commits).
+    local last_year=`git log -n 5 --date=short --format="format:%cd %s" ${file} | \
+                     egrep -i -v "update.*copyright|copyright.*update" | \
+                     head -n 1 | \
+                     perl -p -e 's/^(\d{4})-.*/\1/g;'`
+
+    # We only need to update the copyright year
+    # if the first and last year differ and
+    # if the last year is different from the last year already reported.
+    if [ "${first_year}" != "${last_year}" ] && [ "${last_year}" != "${last_year_reported}" ]
+    then
+        echo "Processing ${file}: ${first_year} - ${last_year}"
+
+        perl -pi -e "s/(Copyright \(C\) \d{4})(\s*-\s*\d{4})?/\1 - ${last_year}/g;" ${file}
+    fi
+}
+export -f check_year
+
+format_copyright() {
+    local file=${1}
+
+    # Format copyright notice.
+    perl -pi -e "s/(Copyright \(C\) \d{4})(\s*-\s*\d{4})?.*/\1\2 by the lifex authors./g" ${file}
+    sed -i -e "s/\. See the GNU/\.  See the GNU/g" ${file}
+    sed -i -e "s/\. If not, see <http:\/\/www\.gnu\.org\/licenses\/>\./\.  If not, see <http:\/\/www\.gnu\.org\/licenses\/>\./g" ${file}
+}
+export -f format_copyright
+
+# Process files in parallel.
+process() {
+    files=${1}
+    options=${2:-""}
+
+    for file in ${files}
+    do
+        # Backup file timestamp, to be restored later
+        # so that Makefiles don't recompile everything
+        # after running this script.
+        tmpfile=$(mktemp)
+        touch --reference=${file} ${tmpfile}
+
+        # Process file.
+        check_year ${file} ${options} &
+
+        if [[ "${options}" == *"format"* ]];
+        then
+            format_copyright ${file} ${options} &
+        fi
+
+        # Restore timestamp.
+        touch --reference=${tmpfile} ${file}
+        rm ${tmpfile}
+    done
+    wait
+}
+export -f process

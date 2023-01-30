@@ -1,0 +1,58 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2020 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+#
+# This script updates the copyright year of every file based on the last
+# modification recorded in the git logs.
+#
+
+if [ ! -f scripts/format/update_copyright_common ]; then
+  echo "*** This script must be run from the top-level directory of lifex."
+  exit 1
+fi
+
+source scripts/format/update_copyright_common
+
+files="$(find apps doc examples source tests \
+              \( -name "*.hpp" \
+                 -or -name "*.cpp" \
+                 -or -name "*.hpp.in" \
+                 -or -name "CMakeLists.txt" \
+                 -or -name "*.cmake" \) \
+              -not \( -name "lifex.hpp" \
+                      -or -name "clipp*" \
+                      -or -name "publications.hpp" \
+                      -or -name "references.hpp" \))
+CMakeLists.txt
+$(find .gitlab scripts -type f \
+       -not \( -name "update_copyright_common" \
+               -or -name "cpplint*" \
+               -or -name "README.md" \
+               -or -name "*~" \))
+.AppImage/build.sh
+.gitlab-ci.yml
+apps/lifexrun
+doc/references/Makefile
+doc/references/latex/references.tex
+doc/style/lifex.css"
+
+process "${files}" "$@"

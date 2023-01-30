@@ -1,0 +1,7 @@
+{
+    "Test CSV": {
+        "CSV test": {
+            "Reference solution filename": "io_csv/reference.csv"
+        }
+    }
+}

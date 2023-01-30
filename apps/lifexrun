@@ -1,0 +1,83 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2020 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+#
+# This is a script that wraps all of lifex applications, provided
+# the application name as an input argument to the present executable.
+#
+# All the apps/ directories are searched for the application with the given name,
+# assuming no duplicates are present. If found, the app is run.
+# Otherwise, a help message is printed.
+#
+
+directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" > /dev/null 2>&1 && pwd)"
+
+# Determine executables in the directory containing this script,
+# excluding this script itself and executables with extension.
+cmd_name_full=$(readlink -f ${0})
+cmd_name="./$(basename ${ARGV0:-${cmd_name_full}})"
+app_list=$(find ${directory} -type f -executable \
+                ! -name "*$(basename "${cmd_name_full}")*" \
+                ! -name "*AppRun*" \
+                ! -name "*lifexrun*" \
+                ! -name "*mpirun*" \
+                ! -name "*.*")
+
+# Print help message.
+help()
+{
+    echo "Wrapper for lifex applications."
+    echo
+    echo "Usage: ${cmd_name} APP_NAME [ARGS]..."
+    echo "Run lifex application APP_NAME with input arguments ARGS."
+    echo
+    echo "Options:"
+    echo "APP_NAME One of the following applications:"
+    echo "${app_list}" | sed "s/.*lifex_/    /" | sort
+    echo
+    echo
+    echo "Examples:"
+    echo "- Show help of lifex_electrophysiology (and list of accepted ARGS):"
+    echo "    ${cmd_name} electrophysiology -h"
+    echo
+    echo "- Generate default parameter file:"
+    echo "    ${cmd_name} electrophysiology -g"
+    echo
+    echo "- Run simulation using 4 parallel processes, specifying custom command-line options:"
+    echo "  (may vary depending on the MPI implementation available on the machine)"
+    echo "    mpirun -np 4 ${cmd_name} electrophysiology -f param_file.prm -o output_folder"
+    echo
+}
+
+# Determine relative path to application with the given name.
+if [[ ! -z "${1}" ]]
+then
+    app_name=$(find ${directory} -type f -executable -name "*${1}")
+fi  
+
+# Execute application and forward arguments.
+if [[ ! -z "${app_name}" ]]
+then
+    exec ${app_name} ${@:2}
+else
+    help
+fi

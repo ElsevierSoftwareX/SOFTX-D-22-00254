@@ -1,0 +1,47 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2021 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+#
+# This is a script that is used by the continuous integration services
+# to perform static analysis checks on the source code.
+#
+# It does so by running 'cppcheck' (that must be installed and available
+# in the system PATH) and 'cpplint' (located in the current directory).
+# The continuous integration services return a failure code if this script
+# returns a failure.
+#
+
+set -e -u
+
+if [ ! -f scripts/format/static_analysis ]
+then
+  echo "*** This script must be run from the top-level directory of lifex."
+  exit 1
+fi
+
+DIRECTORIES=${1:-apps examples source tests}
+
+echo "1/2 Running cppcheck..."
+cppcheck --quiet ${DIRECTORIES} --inline-suppr --error-exitcode=1
+
+echo "2/2 Running cpplint..."
+./scripts/format/cpplint.py --quiet --output=sed --recursive ${DIRECTORIES}

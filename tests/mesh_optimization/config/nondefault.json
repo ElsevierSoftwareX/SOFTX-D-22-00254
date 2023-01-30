@@ -1,0 +1,13 @@
+{
+    "Mesh optimization test": {
+        "Mesh and space discretization": {
+            "Element type": "Tet",
+            "File": {
+                "Filename": "../../mesh/cube_tet.msh"
+            }
+        },
+        "Mesh optimization": {
+            "Gradient penalization factor": "1.0"
+        }
+    }
+}

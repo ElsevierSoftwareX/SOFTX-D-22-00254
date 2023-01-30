@@ -1,0 +1,7 @@
+{
+    "Tutorial 07": {
+        "Preconditioner": {
+            "Preconditioner type": "BlockJacobi"
+        }
+    }
+}

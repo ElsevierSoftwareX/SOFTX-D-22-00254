@@ -1,0 +1,8 @@
+{
+    "Test time interpolation": {
+        "Interpolation method": "Derivative spline interpolation",
+        "CSV test": {
+            "Reference solution filename": "time_interpolation/derivative_spline.csv"
+        }
+    }
+}

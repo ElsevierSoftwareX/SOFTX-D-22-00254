@@ -1,0 +1,8 @@
+{
+    "Test time interpolation": {
+        "Interpolation method": "Linear",
+        "CSV test": {
+            "Reference solution filename": "time_interpolation/linear.csv"
+        }
+    }
+}

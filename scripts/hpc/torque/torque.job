@@ -1,0 +1,58 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2021 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+source torque_config.sh
+
+qsub <<EOF
+#PBS -S /bin/bash
+
+#PBS -l walltime=${TORQUE_WALLTIME}
+#PBS -l nodes=${TORQUE_N_NODES}:ppn=${TORQUE_PPN}${TORQUE_RESOURCE_PROPERTIES}
+
+#PBS -q ${TORQUE_JOB_PARTITION}
+#PBS -N ${TORQUE_JOB_NAME}
+
+#PBS -o ${TORQUE_FILENAME_OUTPUT}
+#PBS -e ${TORQUE_FILENAME_ERROR}
+
+#PBS -m ${TORQUE_MAIL_TYPE}
+#PBS -M ${TORQUE_MAIL_ADDRESS}
+
+cd \${PBS_O_WORKDIR}
+n_procs=\$(cat \${PBS_NODEFILE} | wc -l)
+
+
+echo "==========================================" >  ${TORQUE_FILENAME_OUTPUT} 2>  ${TORQUE_FILENAME_ERROR}
+echo "Start time: $(date)"                        >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+echo "PBS_JOBID = \${PBS_JOBID}"                  >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+echo "PBS_NODEFILE ="                             >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+echo "\$(cat \${PBS_NODEFILE} | sed 's/^/    /')" >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+echo "==========================================" >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+
+mpirun \
+  --hostfile \${PBS_NODEFILE} -n \${n_procs} \
+  ${TORQUE_EXEC_NAME} ${TORQUE_EXEC_ARGS} >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+
+echo "==========================================" >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+echo "End time: $(date)"                          >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+echo "==========================================" >> ${TORQUE_FILENAME_OUTPUT} 2>> ${TORQUE_FILENAME_ERROR}
+EOF

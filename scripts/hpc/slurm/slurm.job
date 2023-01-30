@@ -1,0 +1,59 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2021 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+source slurm_config.sh
+
+sbatch <<EOF
+#!/bin/bash
+
+#SBATCH --nodes=${SLURM_N_NODES}
+#SBATCH --ntasks=${SLURM_N_TASKS}
+#SBATCH --time=${SLURM_WALLTIME}
+#SBATCH --mem=${SLURM_MEM_PER_NODE}
+
+#SBATCH --account=${SLURM_JOB_ACCOUNT}
+#SBATCH --partition=${SLURM_JOB_PARTITION}
+
+#SBATCH --job-name=${SLURM_JOB_NAME}
+
+#SBATCH --output=${SLURM_FILENAME_OUTPUT}
+#SBATCH --error=${SLURM_FILENAME_ERROR}
+
+#SBATCH --mail-type=${SLURM_MAIL_TYPE}
+#SBATCH --mail-user=${SLURM_MAIL_ADDRESS}
+
+
+echo "=========================================="
+echo "Start time: \$(date)"
+echo "SLURM_JOB_ID = \${SLURM_JOB_ID}"
+echo "SLURM_JOB_NODELIST = \${SLURM_JOB_NODELIST}"
+echo "=========================================="
+
+srun \
+  -N \${SLURM_JOB_NUM_NODES} -n \${SLURM_NTASKS} \
+  ${SLURM_EXEC_NAME} ${SLURM_EXEC_ARGS}
+
+echo "=========================================="
+echo "End time: \$(date)"
+echo "=========================================="
+
+EOF

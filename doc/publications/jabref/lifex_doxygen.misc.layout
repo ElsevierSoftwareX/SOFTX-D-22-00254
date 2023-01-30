@@ -1,0 +1,7 @@
+<li id="\format{\bibtexkey}" class="entry">
+    <a name="\format{\bibtexkey}"></a>
+    \begin{author}\format[Authors,HTMLChars]{\author}\end{author} (\year), <i>"\format[HTMLChars]{\title}"</i>\begin{howpublished}, \howpublished\end{howpublished}.\begin{month} \format[HTMLChars]{\month}, \year.\end{month}
+    <p class="infolinks">
+        \begin{doi}[<a href="\format[DOICheck]{\doi}" target="_blank">DOI</a>]\end{doi}\begin{url} [<a href="\format{\url}" target="_blank">URL</a>]\end{url}
+    </p>
+</li>

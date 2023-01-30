@@ -1,0 +1,58 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2019 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+##
+## This script has been readapted from the corresponding file
+## available at the deal.II development repository
+## (https://github.com/dealii/dealii),
+## released under compatible license terms
+## (please consult the doc/licenses directory for more information).
+##
+
+#
+# This script does the same thing as scripts/format/indent_all but only
+# reformats files which have changed (or have been added but neither
+# staged/committed) since the last merge commit to the main branch.
+#
+# The script needs to be executed as
+#   ./scripts/format/indent
+# from the top-level directory of the source tree, or via
+#   make indent
+# from a build directory.
+#
+
+if [ ! -f scripts/format/indent_common ]; then
+  echo "*** This script must be run from the top-level directory of lifex."
+  exit 1
+fi
+
+source scripts/format/indent_common
+
+# Run sanity checks.
+checks
+
+# Process all source and header files.
+process_changed "apps doc/pages examples source tests" ".*\.(cpp|hpp)" format_file
+
+# Fix permissions and convert to unix line ending if necessary.
+process_changed "apps doc/pages examples source tests" ".*\.(cpp|hpp)" fix_permissions
+process_changed "apps doc/pages examples source tests" ".*\.(cpp|hpp)" dos_to_unix

@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: lifex
+message: >-
+  a flexible high performance library for the
+  numerical solution of multiphysics, multiscale and
+  multidomain problems
+type: software
+authors:
+  - given-names: Pasquale Claudio
+    family-names: Africa
+    email: pasqualeclaudio.africa@polimi.it
+    affiliation: >-
+      MOX, Department of Mathematics, Politecnico di
+      Milano, Italy
+    orcid: 'https://orcid.org/0000-0002-0706-8564'
+repository-code: 'https://gitlab.com/lifex/lifex'
+url: 'https://lifex.gitlab.io/lifex'
+license: LGPL-3.0+
+preferred-citation:
+  collection-doi: 10.48550/arXiv.2207.14668
+  type: generic
+references:
+  doi: 10.5281/zenodo.6941116
+  type:generic

@@ -1,0 +1,39 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2021 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+#
+# This is a script that is used by the continuous integration services
+# to make sure that the currently checked out version of a git repository
+# has a proper copyright notice.
+#
+# It does so by running the 'update_copyright' script (located in the current
+# directory), calling 'git diff' to show what differences exist between
+# the correctly indented code and what is in the git index (which is
+# typically what is in the last commit), and then running a command
+# that either returns success or failure, depending on whether or not
+# there are differences. The continuous integration services return
+# a failure code if this script returns a failure.
+#
+
+./scripts/format/update_copyright format || exit 1
+git diff
+git diff-files --quiet

@@ -1,0 +1,253 @@
+#!/bin/bash
+## ---------------------------------------------------------------------
+## Copyright (C) 2019 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+##
+## This script has been readapted from the corresponding file
+## available at the deal.II development repository
+## (https://github.com/dealii/dealii),
+## released under compatible license terms
+## (please consult the doc/licenses directory for more information).
+##
+
+#
+# This file contains a number of common functions used in all indent scripts.
+#
+
+#
+# This function checks that we are in the root directory and that
+# clang-format is available. It is called by both indent and indent_all
+# to ensure that the rest of the indentation pipeline makes sense.
+#
+
+# Check if executable name is either "clang-format" or "clang-format-10.0.0".
+if [ -x "$(command -v clang-format-10.0.0)" ]; then
+  export CLANG_FORMAT_EXE="clang-format-10.0.0"
+else
+  export CLANG_FORMAT_EXE="clang-format"
+fi
+
+checks() {
+  # Add the location 'download_clang-format' or 'compile_clang-format'
+  # installs clang-format to to the local PATH.
+  CLANG_FORMAT_PATH="$(cd "$(dirname "$0")" && pwd)/clang-format-10.0.0/bin"
+  export PATH="${CLANG_FORMAT_PATH}:${PATH}"
+
+  if ! [ -x "$(command -v ${CLANG_FORMAT_EXE})" ]; then
+    echo "***   No clang-format program found."
+    echo "***"
+    echo "***   You can run the './scripts/format/download_clang-format'"
+    echo "***   script, or the './scripts/format/compile_clang-format' script "
+    echo "***   to install a compatible binary into './scripts/format/clang-format-10.0.0/bin'."
+    exit 1
+  fi
+
+  # Make sure to have the right version, i.e. at least version 10.0.
+  CLANG_FORMAT_VERSION="$(${CLANG_FORMAT_EXE} --version)"
+  CLANG_FORMAT_MAJOR_VERSION=$(echo "${CLANG_FORMAT_VERSION}" | sed 's/^[^0-9]*\([0-9]*\).*$/\1/g')
+  CLANG_FORMAT_MINOR_VERSION=$(echo "${CLANG_FORMAT_VERSION}" | sed 's/^[^0-9]*[0-9]*\.\([0-9]*\).*$/\1/g')
+
+  if [ "${CLANG_FORMAT_MAJOR_VERSION}" -lt 10 ] || [ "${CLANG_FORMAT_MINOR_VERSION}" -ne 0 ]; then
+    echo "***   This indent script requires at least clang-format version 10.0.0,"
+    echo "***   but version ${CLANG_FORMAT_MAJOR_VERSION}.${CLANG_FORMAT_MINOR_VERSION} was found instead."
+    echo "***"
+    echo "***   You can run the './scripts/format/download_clang-format'"
+    echo "***   script, or the './scripts/format/compile_clang-format' script "
+    echo "***   to install a compatible binary into './scripts/format/clang-format-10.0.0/bin'."
+    exit 1
+  fi
+
+
+  # check formatting of usernames and email addresses, examples that will be detected as invalid:
+  # single-word-name <a@b.com>
+  # Name Surname <name@notebook.local>
+  # Name Surname <a@no-domain>
+  #
+  # Finally, to stay sane, just go back until the beginning of 2019 for now.
+  #
+  # first user names:
+  git log --since "2019-01-01" --format="%aN" | sort -u | while read name ; do
+      words=($name)
+      # If $name has less than two words (count elements in the list $words).
+      if [ "${#words[@]}" -lt "2" ]; then
+    echo "Invalid author '$name' without firstname and lastname"
+    exit 2
+      fi
+  done || exit 2
+
+  # now emails:
+  git log --since "2019-01-01" --format="%aE" | sort -u | while read email ; do
+      words=($name)
+      # If $email does not contain a dot.
+      if ! echo "$email" | grep -q "\."; then
+    echo "Invalid email '$email'"
+    exit 3
+      fi
+      # If $email ends with ".local".
+      if ! echo "$email" | grep -q -v -e "\.local$"; then
+    echo "Invalid email '$email'"
+    exit 3
+      fi
+  done || exit 3
+
+}
+
+#
+# Mac OSX's mktemp doesn't know the --tmpdir option without argument. So,
+# let's do all of that by hand:
+#
+export TMPDIR="${TMPDIR:-/tmp}"
+
+#
+# This function silently replaces file "${1}" with "${2}".
+#
+
+fix()
+{
+  file="${1}"
+  tmpfile="${2}"
+
+  if ! diff -q "${file}" "${tmpfile}" >/dev/null; then
+    mv "${tmpfile}" "${file}"
+  fi
+}
+export -f fix
+
+#
+# In order to format .cc and .h files we have to make sure that we override
+# the source/header file only if the actual contents changed.
+# Unfortunately, clang-format isn't exactly helpful there. Thus, use a
+# temporary file and diff as a workaround.
+#
+
+format_file()
+{
+  file="${1}"
+  tmpfile="$(mktemp "${TMPDIR}/$(basename "$1").tmp.XXXXXXXX")"
+
+  "${CLANG_FORMAT_EXE}" "${file}" > "${tmpfile}"
+
+  fix "${file}" "${tmpfile}"
+  rm -f "${tmpfile}"
+}
+export -f format_file
+
+
+#
+# Convert DOS formatted files to unix file format by stripping out
+# carriage returns (15=0x0D):
+#
+
+dos_to_unix()
+{
+  file="${1}"
+  tmpfile="$(mktemp "${TMPDIR}/$(basename "$1").tmp.XXXXXXXX")"
+
+  tr -d '\015' <"${file}" >"${tmpfile}"
+
+  fix "${file}" "${tmpfile}"
+  rm -f "${tmpfile}" "${tmpfile}"
+}
+export -f dos_to_unix
+
+#
+# Fix permissions
+#
+
+fix_permissions()
+{
+  file="${1}"
+
+  case "${OSTYPE}" in
+    darwin*)
+      PERMISSIONS="$(stat -f '%a' ${file})"
+      ;;
+    *)
+      PERMISSIONS="$(stat -c '%a' ${file})"
+      ;;
+  esac
+
+  if [ "${PERMISSIONS}" != "644" ]; then
+    chmod 644 "${file}"
+  fi
+}
+export -f fix_permissions
+
+#
+# Collect all files found in a list of directories "${1}$" matching a
+# regular expression "${2}$", and process them with a command "${3}" on 10
+# threads in parallel.
+#
+# The command line is a bit complicated, so let's discuss the more
+# complicated arguments:
+# - For 'find', -print0 makes sure that file names are separated by \0
+#   characters, as opposed to the default \n. That's because, surprisingly,
+#   \n is a valid character in a file name, whereas \0 is not -- so it
+#   serves as a good candidate to separate individual file names.
+# - For 'xargs', -0 does the opposite: it separates filenames that are
+#   delimited by \0
+# - the options "-n 1 -P 10" make sure that the following script will be
+#   called exactly with one file name as argument at a time, but we allow
+#   execution for up to 10 times in parallel
+#
+
+process()
+{
+  case "${OSTYPE}" in
+    darwin*)
+      find -E ${1} -regex "${2}" -print0 |
+        xargs -0 -P 10 -I {} bash -c "${3} {}"
+      ;;
+    *)
+      find ${1} -regextype egrep -regex "${2}" -print0 |
+        xargs -0 -P 10 -I {} bash -c "${3} {}"
+      ;;
+  esac
+}
+
+#
+# Variant of above function that only processes files that have changed
+# since the last merge commit to main. For this, we collect all files
+# that
+#  - are new
+#  - have changed since the last merge commit to main
+#
+
+process_changed()
+{
+  LAST_MERGE_COMMIT="$(git log --format="%H" --merges --max-count=1 main)"
+  COMMON_ANCESTOR_WITH_MAIN="$(git merge-base ${LAST_MERGE_COMMIT} HEAD)"
+
+  case "${OSTYPE}" in
+    darwin*)
+      XARGS="xargs -E"
+      ;;
+    *)
+      XARGS="xargs --no-run-if-empty -d"
+      ;;
+  esac
+
+  ( git ls-files --others --exclude-standard -- ${1};
+    git diff --name-only --diff-filter=d ${COMMON_ANCESTOR_WITH_MAIN} -- ${1} ) |
+      sort -u |
+      grep -E "^${2}$" |
+      ${XARGS} '\n' -P 10 -I {} bash -c "${3} {}"
+}

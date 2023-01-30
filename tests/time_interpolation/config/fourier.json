@@ -1,0 +1,8 @@
+{
+    "Test time interpolation": {
+        "Interpolation method": "Fourier",
+        "CSV test": {
+            "Reference solution filename": "time_interpolation/fourier.csv"
+        }
+    }
+}

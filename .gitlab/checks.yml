@@ -1,0 +1,83 @@
+## ---------------------------------------------------------------------
+## Copyright (C) 2019 - 2022 by the lifex authors.
+##
+## This file is part of lifex.
+##
+## lifex is free software; you can redistribute it and/or modify
+## it under the terms of the GNU Lesser General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## lifex is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+## Lesser General Public License for more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with lifex.  If not, see <http://www.gnu.org/licenses/>.
+## ---------------------------------------------------------------------
+
+# Author: Pasquale Claudio Africa <pasqualeclaudio.africa@polimi.it>.
+
+# Check if code is correctly indented.
+check indentation:
+  stage: sanity checks
+  script:
+    - scripts/format/check_indentation
+  extends:
+    - .only_branches_mr
+
+# Run static code analysis.
+static analysis:
+  stage: sanity checks
+  script:
+    - scripts/format/static_analysis
+  extends:
+    - .only_branches_mr
+
+# Check if code is correctly indented.
+check copyright:
+  stage: sanity checks
+  script:
+    - scripts/format/check_copyright
+  extends:
+    - .only_main_mr
+
+# Check if the documentation can be generated without errors.
+check doc:
+  stage: sanity checks
+  script:
+    # Generate list of publications and references.
+    # JabRef always returns 0 as an exit code, thus errors
+    # are captured manually and thrown with a failure code.
+
+    - cd doc/publications
+    - make jabref 2> error.log
+    - >
+      if [ -s error.log ];
+      then
+        echo "JabRef: error in generating publications.";
+        exit 1;
+      fi
+
+    - cd ../references
+    - make jabref 2> error.log
+    - >
+      if [ -s error.log ];
+      then
+        echo "JabRef: error in generating references.";
+        exit 1;
+      fi
+
+    # Generate documentation.
+    - cd ${CI_PROJECT_DIR}/build
+    - cmake ..
+    - make doc
+  artifacts:
+    paths:
+      - build
+      - doc/publications/publications.hpp
+      - doc/references/references.hpp
+    expire_in: 1 day
+  extends:
+    - .only_branches_mr
